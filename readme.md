@@ -70,17 +70,29 @@ chmod +x src/run_onnx.sh
 ## 📊 Benchmark Results
 
 ### System Specs
-- **Device**: NVIDIA GPU (Specific model not listed in logs)
+- **Device**: NVIDIA GPU (NVIDIA GeForce RTX 3060, Driver Version: 580.105.08, CUDA Version: 13.0 had to downgrade to 12.9 for ORT to work)
 - **Platform**: Linux
 
-### PyTorch (Batch Size 1)
+### PyTorch (Baseline)
 
-| Device | Latency (ms/img) | Throughput (img/s) |
-|--------|------------------|--------------------|
-| **CPU**    | 14.91            | 67.07              |
-| **CUDA**   | 1.65             | 605.55             |
+| Device | Batch Size | Latency (ms/img) | Throughput (img/s) |
+|--------|------------|------------------|--------------------|
+| **CPU**    | 1          | 14.91            | 67.07              |
+| **CUDA**   | 1          | 1.65             | 605.55             |
 
-*Note: Results above are from a sample run with batch size 1.*
+### ONNX Runtime & TensorRT
+
+| Provider | Batch Size | Latency (ms/img) | Throughput (img/s) |
+| :--- | :--- | :--- | :--- |
+| **ORT CPU** | 1 | 11.79 | 84.83 |
+| | 8 | 7.82 | 127.86 |
+| | 32 | 5.03 | 198.70 |
+| **ORT CUDA** | 1 | 1.86 | 538.39 |
+| | 8 | 0.97 | 1028.11 |
+| | 32 | 0.93 | 1073.20 |
+| **ORT TensorRT** | 1 | 1.49 | 672.08 |
+| | 8 | 0.75 | 1340.05 |
+| | 32 | 0.64 | 1559.74 |
 
 ---
-**Happy Optimizing!** 🚀
+
