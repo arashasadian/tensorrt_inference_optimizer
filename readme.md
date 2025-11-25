@@ -1,36 +1,86 @@
 # TensorRT Inference Optimizer
 
-A benchmarking tool for comparing PyTorch inference performance on CPU vs CUDA using ResNet18.
+A comprehensive benchmarking tool designed to optimize and compare inference performance of ResNet18 across different backends: **PyTorch (CPU/CUDA)**, **ONNX Runtime (CPU/CUDA)**, and **TensorRT**.
 
-## Usage
+This project helps in identifying the best inference strategy for your hardware by providing easy-to-use scripts for model export and benchmarking.
 
-To run the benchmark with batch processing:
+## 📂 Project Structure
+
+```text
+.
+├── data/                   # Directory for input images
+├── models/                 # Directory where exported ONNX models are saved
+├── src/
+│   ├── benchmark_torch.py  # PyTorch benchmarking script (CPU/CUDA)
+│   ├── benchmark_onnx.py   # ONNX Runtime benchmarking script (CPU/CUDA/TensorRT)
+│   ├── export_to_onnx.py   # Script to export ResNet18 to ONNX
+│   └── run_onnx.sh         # Helper script to run ONNX benchmarks with CUDA env vars
+└── readme.md               # This file
+```
+
+## 🛠️ Prerequisites
+
+Ensure you have the following installed:
+- Python 3.8+
+- PyTorch & Torchvision
+- ONNX Runtime GPU (`onnxruntime-gpu`)
+- CUDA Toolkit (compatible with your PyTorch/ORT version)
+- Pillow, NumPy
+
+```bash
+pip install torch torchvision onnxruntime-gpu pillow numpy
+```
+
+## 🚀 Usage
+
+### 1. Export Model to ONNX
+First, export the pre-trained ResNet18 model to ONNX format. This handles dynamic axes for batch processing.
+
+```bash
+python src/export_to_onnx.py
+```
+*Output: `models/resnet18_dynamic.onnx`*
+
+### 2. Benchmark PyTorch (Baseline)
+Run the PyTorch benchmark to establish a baseline for CPU and CUDA performance.
 
 ```bash
 python src/benchmark_torch.py \
   --benchmark_type batch \
-  --batch-sizes 1 \
+  --batch-sizes 1 8 32 \
   --warmup 2 \
-  --iters 2
+  --iters 10
 ```
 
-## Example Output
+### 3. Benchmark ONNX Runtime & TensorRT
+Use the helper script to run benchmarks across CPU, CUDA, and TensorRT providers.
 
-```text
-/home/arash/venvs/ai/lib/python3.12/site-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
-  import pynvml  # type: ignore[import]
+```bash
+# Make sure the script is executable
+chmod +x src/run_onnx.sh
 
-=== Device: cpu ===
-    Warmup iters: 2, Timed iters: 2
-    Total images processed: 2000
-    Elapsed time: 29.8187 s
-    Latency: 14.909326 ms / image
-    Throughput: 67.07 images/s
-
-=== Device: cuda ===
-    Warmup iters: 2, Timed iters: 2
-    Total images processed: 2000
-    Elapsed time: 3.3028 s
-    Latency: 1.651383 ms / image
-    Throughput: 605.55 images/s
+# Run benchmark
+./src/run_onnx.sh \
+  --onnx-path models/resnet18_dynamic.onnx \
+  --batch-sizes 1 8 32 \
+  --mode all
 ```
+*Note: `src/run_onnx.sh` sets necessary `CUDA_HOME` and `LD_LIBRARY_PATH` variables. Adjust them in the script if your CUDA installation path differs.*
+
+## 📊 Benchmark Results
+
+### System Specs
+- **Device**: NVIDIA GPU (Specific model not listed in logs)
+- **Platform**: Linux
+
+### PyTorch (Batch Size 1)
+
+| Device | Latency (ms/img) | Throughput (img/s) |
+|--------|------------------|--------------------|
+| **CPU**    | 14.91            | 67.07              |
+| **CUDA**   | 1.65             | 605.55             |
+
+*Note: Results above are from a sample run with batch size 1.*
+
+---
+**Happy Optimizing!** 🚀

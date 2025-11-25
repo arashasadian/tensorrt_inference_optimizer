@@ -9,7 +9,8 @@ import time
 from PIL import Image
 import argparse
 from pathlib import Path
-
+import csv
+from datetime import datetime
 
 
 
@@ -70,7 +71,7 @@ def batched(image_files, batch_sizes = [1, 8, 32], warmup = 3, iters = 10):
     images = torch.stack(images, dim=0)
     N = images.shape[0]
  
-    
+    rows = []
     for device in ["cpu", "cuda"]:
         print(f"\n=== Device: {device} ===")
         model, _ = load_model(device)
@@ -111,6 +112,18 @@ def batched(image_files, batch_sizes = [1, 8, 32], warmup = 3, iters = 10):
             elapsed_time = end - start
             latency_ms = (elapsed_time / total_images) * 1000.0
             throughput = total_images / elapsed_time
+            rows.append({
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "device": device,
+                "batch_size": batch_size,
+                "warmup": warmup,
+                "iters": iters,
+                "total_images": total_images,
+                "elapsed_time_sec": elapsed_time,
+                "latency_ms_per_image": latency_ms,
+                "throughput_img_per_sec": throughput,
+            })
+
 
         print(
             f"    Warmup iters: {warmup}, Timed iters: {iters}\n"
@@ -119,6 +132,31 @@ def batched(image_files, batch_sizes = [1, 8, 32], warmup = 3, iters = 10):
             f"    Latency: {latency_ms:.6f} ms / image\n"
             f"    Throughput: {throughput:.2f} images/s"
         )
+
+    results_path = Path("results/torch_benchmarks.csv")
+    file_exists = results_path.exists()
+
+    with results_path.open("a", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "timestamp",
+                "device",
+                "batch_size",
+                "warmup",
+                "iters",
+                "total_images",
+                "elapsed_time_sec",
+                "latency_ms_per_image",
+                "throughput_img_per_sec",
+            ],
+        )
+        if not file_exists:
+            writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"\nSaved results to {results_path}")
+
 
 
             
